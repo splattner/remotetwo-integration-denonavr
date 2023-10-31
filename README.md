@@ -95,21 +95,21 @@ docker build -f build/Dockerfile -t  ghcr.io/splattner/remotetwo-integration-den
 ### Checksums
 
 ```shell
-wget https://github.com/splattner/remotetwo-integration-denonavr/releases/download/v0.2.7/goucrt_0.2.7_checksums.txt
+wget https://github.com/splattner/remotetwo-integration-denonavr/releases/download/v0.2.7/remotetwo-integration-denonavr_0.2.7_checksums.txt
 cosign verify-blob \
   --certificate-identity 'https://github.com/splattner/remotetwo-integration-denonavr/.github/workflows/release.yaml@refs/tags/v0.2.7' \
   --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
-  --cert https://github.com/splattner/remotetwo-integration-denonavr/releases/download/v0.2.7/rtintg-denonavr_0.2.7_checksums.txt.pem \
-  --signature https://github.com/splattner/remotetwo-integration-denonavr/releases/download/v0.2.7/rtintg-denonavr.1.3_checksums.txt.sig \
-  ./rtintg-denonavr_0.2.7_checksums.txt
+  --cert https://github.com/splattner/remotetwo-integration-denonavr/releases/download/v0.2.7/remotetwo-integration-denonavr_0.2.7_checksums.txt.pem \
+  --signature https://github.com/splattner/remotetwo-integration-denonavr/releases/download/v0.2.7/remotetwo-integration-denonavr_0.2.7_checksums.txt.sig \
+  ./remotetwo-integration-denonavr_0.2.7_checksums.txt
 ```
 
 You can then download any file you want from the release, and verify it with, for example:
 
 ```shell
-wget https://github.com/splattner/remotetwo-integration-denonavr/releases/download/v0.2.7/rtintg-denonavr_0.2.7_linux_amd64.tar.gz.sbom
-wget https://github.com/splattner/remotetwo-integration-denonavr/releases/download/v0.2.7/rtintg-denonavr_0.2.7_linux_amd64.tar.gz
-sha256sum --ignore-missing -c checksums.txt
+wget https://github.com/splattner/remotetwo-integration-denonavr/releases/download/v0.2.7/remotetwo-integration-denonavr_0.2.7_linux_amd64.tar.gz.sbom
+wget https://github.com/splattner/remotetwo-integration-denonavr/releases/download/v0.2.7/remotetwo-integration-denonavr_0.2.7_linux_amd64.tar.gz
+sha256sum --ignore-missing -c remotetwo-integration-denonavr_0.2.7_checksums.txt
 ```
 
 And both should say "OK".
