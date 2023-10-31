@@ -4,11 +4,13 @@
 ![GitHub](https://img.shields.io/github/license/splattner/remotetwo-integration-denonavr)
 ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/splattner/remotetwo-integration-denonavr)
 
+The project uses the [goucrt](https://github.com/splattner/goucrt) library.
+
 This [Unfolded Circle Remote Two](https://www.unfoldedcircle.com/) integration driver written in Go implements is to control a Denon AV Receiver.
 
 Currently a [`MediaPlayer` entity](https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_media_player.md) and some [`Button` entities](https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_button.md) are implemented.
 
-The project uses the [goucrt](https://github.com/splattner/goucrt) library.
+The Denon AV Receiver is controlled via its http based interface. Optionally you can enable telnet based integration during setup which improves the response speed of the integration. Using telnet provides realtime updates (local push) for many values but each receiver is limited to a single connection. If you enable this setting, no other connection to your device can be made via telnet.
 
 ## How to use
 
