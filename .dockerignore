@@ -1,0 +1,5 @@
+.*
+*
+!go.mod
+!rtintg-denonavr-amd64
+!rtintg-denonavr-arm64

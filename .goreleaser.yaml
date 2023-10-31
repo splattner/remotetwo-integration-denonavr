@@ -1,0 +1,93 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+
+# The lines bellow are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/need to use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # you may remove this if you don't need go generate
+    - go generate ./...
+
+builds:
+  - main: ./cmd/rtintg-denonavr
+    binary: rtintg-denonavr
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+    - amd64
+    - arm64
+
+dockers:
+- image_templates:
+  - "ghcr.io/splattner/remotetwo-integration-denonavr:v{{ .Version }}-amd64"
+  dockerfile: "./build/Dockerfile"
+  goarch: amd64
+  use: buildx
+  build_flag_templates:
+  - "--platform=linux/amd64"
+  - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+  - "--label=org.opencontainers.image.version={{.Version}}"
+  extra_files: &dockers_extra_files
+  - go.mod
+- image_templates:
+  - "ghcr.io/splattner/remotetwo-integration-denonavr:v{{ .Version }}-arm64"
+  dockerfile: "./build/Dockerfile"
+  goarch: arm64
+  use: buildx
+  build_flag_templates:
+  - "--platform=linux/arm64"
+  - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+  - "--label=org.opencontainers.image.version={{.Version}}"
+  extra_files: *dockers_extra_files
+docker_manifests:
+- name_template: "ghcr.io/splattner/remotetwo-integration-denonavr:v{{ .Version }}"
+  image_templates: &ghcr
+    - "ghcr.io/splattner/remotetwo-integration-denonavr:v{{ .Version }}-amd64"
+    - "ghcr.io/splattner/remotetwo-integration-denonavr:v{{ .Version }}-arm64"
+
+  # For prereleases, updating `latest` and the floating tags of the major version does not make sense.
+  # Only the image for the exact version should be pushed.
+- name_template: "{{ if not .Prerelease }}ghcr.io/splattner/remotetwo-integration-denonavr:v{{ .Major }}{{ end }}"
+  image_templates: *ghcr
+- name_template: "{{ if not .Prerelease }}ghcr.io/splattner/remotetwo-integration-denonavr:v{{ end }}"
+  image_templates: *ghcr
+- name_template: "{{ if not .Prerelease }}ghcr.io/splattner/remotetwo-integration-denonavr:latest{{ end }}"
+  image_templates: *ghcr
+
+sboms:
+  - artifacts: archive
+  - id: source # Two different sbom configurations need two different IDs
+    artifacts: source
+    
+# signs our docker image
+# https://goreleaser.com/customization/docker_sign
+docker_signs:
+  - cmd: cosign
+    artifacts: images
+    output: true
+    args:
+    - 'sign'
+    - 'ghcr.io/splattner/remotetwo-integration-denonavr@${digest}'
+    - "--yes" # needed on cosign 2.0.0+
+
+# signs the checksum file
+# all files (including the sboms) are included in the checksum, so we don't need to sign each one if we don't want to
+# https://goreleaser.com/customization/sign
+signs:
+- cmd: cosign
+  certificate: '${artifact}.pem'
+  args:
+    - sign-blob
+    - '--output-certificate=${certificate}'
+    - '--output-signature=${signature}'
+    - '${artifact}'
+    - "--yes" # needed on cosign 2.0.0+
+  artifacts: checksum
+  output: true
