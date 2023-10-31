@@ -10,7 +10,16 @@ This [Unfolded Circle Remote Two](https://www.unfoldedcircle.com/) integration d
 
 Currently a [`MediaPlayer` entity](https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_media_player.md) and some [`Button` entities](https://github.com/unfoldedcircle/core-api/blob/main/doc/entities/entity_button.md) are implemented.
 
+![Configuration](assets/configuration-page.png)
+
+The 3 implemented Buttons currently control the monitor output, you can set the output to `Monitor 1`, `Monitor 2` or `Montitor Auto`.
+The `MediaPlayer` entity in Remote Two currently does not allow to implement arbitratry commands. Therefore I have not everything you can control on the Denon AVR is implemented. The 3 Buttons are the ones I am using. If you need more, feel free to open a Github Issue.
+
 The Denon AV Receiver is controlled via its http based interface. Optionally you can enable telnet based integration during setup which improves the response speed of the integration. Using telnet provides realtime updates (local push) for many values but each receiver is limited to a single connection. If you enable this setting, no other connection to your device can be made via telnet.
+
+This is how the driver setup page looks like. You have to configure the IP of your Denon AVR Device and if you want to use Telnet for comunication.
+
+![Driver Setup](assets/driver-setup.png)
 
 ## How to use
 
