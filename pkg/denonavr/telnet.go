@@ -17,92 +17,110 @@ type TelnetEvent struct {
 	Payload string
 }
 
-func (d *DenonAVR) handleTelnetEvents() {
+func (d *DenonAVR) handleTelnetEvents(controlChannel chan string) {
 
+	log.Debug("Start Telnet Event Handler")
 	for {
-		event := <-d.telnetEvents
-		parsedCommand := strings.Split(event.Command, "")
-		command := parsedCommand[0] + parsedCommand[1]
-		param := strings.Join(parsedCommand[2:], "")
+		select {
+		case event := <-d.telnetEvents:
+			parsedCommand := strings.Split(event.Command, "")
+			command := parsedCommand[0] + parsedCommand[1]
+			param := strings.Join(parsedCommand[2:], "")
 
-		if event.Command == "OPSTS" {
-			// ignore this
-			continue
-		}
-
-		log.WithFields(log.Fields{
-			"cmd":     event.Command,
-			"payload": event.Payload,
-			"command": DenonCommand(command),
-			"param":   param,
-		}).Debug("Telnet Event received")
-
-		switch DenonCommand(command) {
-		case DenonCommandPower:
-			d.SetAttribute("POWER", param)
-		case DennonCommandZoneMain:
-			d.SetAttribute("MainZonePower", param)
-		case DenonCommandMainZoneVolume:
-			if param != "MAX" {
-
-				volume, err := strconv.ParseFloat(param, 32)
-				if err != nil {
-					log.WithError(err).Error("failed to parse volume")
-				}
-
-				// The Volume command need the following
-				// 10.5 -> MV105
-				// 11 -> MV11
-				if len(param) == 3 {
-					volume = volume / 10
-					log.WithField("volume", volume).Debug("Got volume after conversion")
-				}
-
-				d.SetAttribute("MainZoneVolume", fmt.Sprintf("%0.1f", volume-80))
+			if event.Command == "OPSTS" {
+				// ignore this
+				continue
 			}
 
-		case DenonCommandMainZoneMute:
-			d.SetAttribute("MainZoneMute", strings.ToLower(param))
+			log.WithFields(log.Fields{
+				"cmd":     event.Command,
+				"payload": event.Payload,
+				"command": DenonCommand(command),
+				"param":   param,
+			}).Debug("Telnet Event received")
+
+			switch DenonCommand(command) {
+			case DenonCommandPower:
+				d.SetAttribute("POWER", param)
+			case DennonCommandZoneMain:
+				d.SetAttribute("MainZonePower", param)
+			case DenonCommandMainZoneVolume:
+				if param != "MAX" {
+
+					volume, err := strconv.ParseFloat(param, 32)
+					if err != nil {
+						log.WithError(err).Error("failed to parse volume")
+					}
+
+					// The Volume command need the following
+					// 10.5 -> MV105
+					// 11 -> MV11
+					if len(param) == 3 {
+						volume = volume / 10
+						log.WithField("volume", volume).Debug("Got volume after conversion")
+					}
+
+					d.SetAttribute("MainZoneVolume", fmt.Sprintf("%0.1f", volume-80))
+				}
+
+			case DenonCommandMainZoneMute:
+				d.SetAttribute("MainZoneMute", strings.ToLower(param))
+			}
+		case msg := <-controlChannel:
+			if msg == "disconnect" {
+				return
+			}
 		}
 	}
 }
 
-func (d *DenonAVR) listenTelnet() {
+func (d *DenonAVR) listenTelnet(controlChannel chan string) error {
+
+	log.Debug("Start Telnet listen loop")
+
+	eventHandlerControlChannel := make(chan string)
 
 	defer func() {
 		log.Debug("Closing Telnet connection")
-		d.telnet.Close()
+		eventHandlerControlChannel <- "disconnect"
+		if err := d.telnet.Close(); err != nil {
+			log.WithError(err).Debug("Telnet connection (already) closed")
+		}
 	}()
 
-	go d.handleTelnetEvents()
+	go d.handleTelnetEvents(eventHandlerControlChannel)
 
 	var err error
 
+	d.telnet, err = telnet.DialTimeout("tcp", d.Host+":23", 5*time.Second)
+	if err != nil {
+		log.WithError(err).Info("failed to connect to telnet")
+		return err
+	}
+
+	if err = d.telnet.Conn.(*net.TCPConn).SetKeepAlive(true); err != nil {
+		log.WithError(err).Error("failed to enable tcp keep alive")
+		return err
+	}
+
+	if err = d.telnet.Conn.(*net.TCPConn).SetKeepAlivePeriod(5 * time.Second); err != nil {
+		log.WithError(err).Error("failed to set tcp keep alive period")
+		return err
+	}
+
+	log.WithField("host", d.Host+":23").Debug("Telnet connected")
+
+	dataChannel := make(chan string)
+
 	for {
-		d.telnet, err = telnet.DialTimeout("tcp", d.Host+":23", 5*time.Second)
-		if err != nil {
-			log.WithError(err).Info("failed to connect to telnet")
-			continue
-		}
 
-		if err = d.telnet.Conn.(*net.TCPConn).SetKeepAlive(true); err != nil {
-			log.WithError(err).Error("failed to enable tcp keep alive")
-		}
-
-		if err = d.telnet.Conn.(*net.TCPConn).SetKeepAlivePeriod(5 * time.Second); err != nil {
-			log.WithError(err).Error("failed to set tcp keep alive period")
-		}
-
-		log.WithField("host", d.Host+":23").Debug("Telnet connected")
-
-		for {
-			data, err := d.telnet.ReadString('\r')
-			if err != nil {
-				log.WithError(err).Errorf("failed to read form telnet")
-				break
+		go d.telnetReadString(dataChannel)
+		select {
+		case data := <-dataChannel:
+			if data == "" {
+				log.Debug("No Data from Telnet received")
+				return fmt.Errorf("failed to read form telnet")
 			}
-			data = strings.Trim(data, " \n\r")
-
 			parsedData := strings.Split(data, " ")
 			event := TelnetEvent{}
 			event.RawData = data
@@ -113,8 +131,24 @@ func (d *DenonAVR) listenTelnet() {
 
 			// Fire Event for handling
 			d.telnetEvents <- &event
+		case msg := <-controlChannel:
+			if msg == "disconnect" {
+				return nil
+			}
 		}
+
 	}
+}
+
+func (d *DenonAVR) telnetReadString(dataChannel chan string) {
+
+	data, err := d.telnet.ReadString('\r')
+	data = strings.Trim(data, " \n\r")
+	if err != nil {
+		log.WithError(err).Errorf("failed to read form telnet")
+		return
+	}
+	dataChannel <- data
 }
 
 func (d *DenonAVR) sendTelnetCommand(cmd DenonCommand, payload string) error {

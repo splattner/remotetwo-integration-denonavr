@@ -92,7 +92,8 @@ type DenonAVR struct {
 	attributes     map[string]interface{}
 	attributeMutex sync.Mutex
 
-	updateTrigger chan string
+	updateTrigger  chan string
+	controlChannel chan string
 
 	// Telnet
 	telnetEnabled bool
@@ -117,6 +118,7 @@ func NewDenonAVR(host string, telnetEnabled bool) *DenonAVR {
 	denonavr.attributes = make(map[string]interface{})
 
 	denonavr.updateTrigger = make(chan string)
+	denonavr.controlChannel = make(chan string)
 	denonavr.telnetEvents = make(chan *TelnetEvent)
 
 	denonavr.telnetEnabled = telnetEnabled
@@ -156,6 +158,11 @@ func (d *DenonAVR) getMainZoneDataFromDevice() {
 	}
 }
 
+func (d *DenonAVR) StopListenLoop() {
+	log.Info("Stop Denon Listen Loop")
+	d.controlChannel <- "disconnect"
+}
+
 func (d *DenonAVR) StartListenLoop() {
 
 	log.Info("Start Denon Listen Loop")
@@ -163,8 +170,12 @@ func (d *DenonAVR) StartListenLoop() {
 	updateInterval := 5 * time.Second
 	ticker := time.NewTicker(updateInterval)
 
+	telnetControlChannel := make(chan string)
+
 	defer func() {
 		ticker.Stop()
+		telnetControlChannel <- "disconnect"
+		log.Debug("Denon Listen Loop stopped")
 	}()
 
 	// Start listening to telnet
@@ -172,7 +183,12 @@ func (d *DenonAVR) StartListenLoop() {
 		go func() {
 			// just try to reconnect if connection lost
 			for {
-				d.listenTelnet()
+				log.Debug("Starting Telnet Loop")
+				if err := d.listenTelnet(telnetControlChannel); err != nil {
+					// try reconnect
+					continue
+				}
+				return
 			}
 		}()
 	}
@@ -188,6 +204,10 @@ func (d *DenonAVR) StartListenLoop() {
 		case <-ticker.C:
 			// Update every 5 Seconds
 			d.updateAndNotify()
+		case msg := <-d.controlChannel:
+			if msg == "disconnect" {
+				return
+			}
 
 		}
 	}
