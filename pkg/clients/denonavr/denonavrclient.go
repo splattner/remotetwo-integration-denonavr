@@ -48,7 +48,7 @@ func NewDenonAVRClient(i *integration.Integration) *DenonAVRClient {
 	inputSetting_telnet := integration.SetupDataSchemaSettings{
 		Id: "telnet",
 		Label: integration.LanguageText{
-			En: "Use telnet to communicate with your DenonAV",
+			En: "Use telnet to communicate with your DenonAVR Device",
 		},
 		Field: integration.SettingTypeCheckbox{
 			Checkbox: integration.SettingTypeCheckboxDefinition{
@@ -65,11 +65,11 @@ func NewDenonAVRClient(i *integration.Integration) *DenonAVRClient {
 		Name: integration.LanguageText{
 			En: "Denon AVR",
 		},
-		Version: "0.2.7",
+		Version: "0.2.8",
 		SetupDataSchema: integration.SetupDataSchema{
 			Title: integration.LanguageText{
 				En: "Configuration",
-				De: "KOnfiguration",
+				De: "Konfiguration",
 			},
 			Settings: []integration.SetupDataSchemaSettings{inputSetting_ipaddr, inputSetting_telnet},
 		},
@@ -315,6 +315,7 @@ func (c *DenonAVRClient) denonClientLoop() {
 		msg := <-c.Messages
 		switch msg {
 		case "disconnect":
+			c.denon.StopListenLoop()
 			return
 		}
 	}
