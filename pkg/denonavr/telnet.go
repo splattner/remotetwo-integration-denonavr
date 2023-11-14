@@ -166,7 +166,10 @@ func (d *DenonAVR) sendTelnetCommand(cmd DenonCommand, payload string) error {
 		"payload": payload,
 	}).Debug("Send Telnet command")
 
-	_, err := d.telnet.Write([]byte(string(cmd) + payload + "\r"))
+	if d.telnet != nil {
+		_, err := d.telnet.Write([]byte(string(cmd) + payload + "\r"))
+		return err
+	}
 
-	return err
+	return fmt.Errorf("cannot send telnet command, no telnet connection available")
 }
