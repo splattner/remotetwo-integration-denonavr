@@ -65,7 +65,7 @@ func NewDenonAVRClient(i *integration.Integration) *DenonAVRClient {
 		Name: integration.LanguageText{
 			En: "Denon AVR",
 		},
-		Version: "0.2.8",
+		Version: "0.2.9",
 		SetupDataSchema: integration.SetupDataSchema{
 			Title: integration.LanguageText{
 				En: "Configuration",
@@ -284,10 +284,6 @@ func (c *DenonAVRClient) configureDenon() {
 
 func (c *DenonAVRClient) denonClientLoop() {
 
-	defer func() {
-		c.SetDeviceState(integration.DisconnectedDeviceState)
-	}()
-
 	if c.denon == nil {
 		// Initialize Denon Client
 		c.setupDenon()
@@ -301,9 +297,14 @@ func (c *DenonAVRClient) denonClientLoop() {
 		// Configure Denon Client
 		c.configureDenon()
 
-		log.WithFields(log.Fields{
-			"Denon IP": c.denon.Host}).Info("Start Denon AVR Client Loop")
-		go c.denon.StartListenLoop()
+		go func() {
+			log.WithFields(log.Fields{
+				"Denon IP": c.denon.Host}).Info("Start Denon AVR Client Loop")
+			if err := c.denon.StartListenLoop(); err != nil {
+				log.WithError(err).Debug("Denon AVR Client Loop ended with errors")
+				c.Messages <- "error"
+			}
+		}()
 
 		// Handle connection to device this integration shall control
 		// Set Device state to connected when connection is established
@@ -316,7 +317,13 @@ func (c *DenonAVRClient) denonClientLoop() {
 		switch msg {
 		case "disconnect":
 			c.denon.StopListenLoop()
+			c.denon = nil
+			c.SetDeviceState(integration.DisconnectedDeviceState)
 			return
+		case "error":
+			// The denon Listen loop ended with some errors
+			c.denon = nil
+			c.SetDeviceState(integration.ErrorDeviceState)
 		}
 	}
 

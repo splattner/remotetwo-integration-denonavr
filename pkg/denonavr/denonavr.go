@@ -2,6 +2,7 @@ package denonavr
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io"
 	"sort"
 	"sync"
@@ -163,7 +164,7 @@ func (d *DenonAVR) StopListenLoop() {
 	d.controlChannel <- "disconnect"
 }
 
-func (d *DenonAVR) StartListenLoop() {
+func (d *DenonAVR) StartListenLoop() error {
 
 	log.Info("Start Denon Listen Loop")
 
@@ -174,21 +175,23 @@ func (d *DenonAVR) StartListenLoop() {
 
 	defer func() {
 		ticker.Stop()
-		telnetControlChannel <- "disconnect"
 		log.Debug("Denon Listen Loop stopped")
 	}()
 
 	// Start listening to telnet
 	if d.telnetEnabled {
 		go func() {
-			// just try to reconnect if connection lost
+			// Try reconnecting to telnet if reconnect is true
 			for {
 				log.Debug("Starting Telnet Loop")
-				if err := d.listenTelnet(telnetControlChannel); err != nil {
-					// try reconnect
-					continue
+				if err, reconnect := d.listenTelnet(telnetControlChannel); err != nil {
+					log.WithError(err).Debug("listenTelnet returned with error")
+					close(telnetControlChannel)
+					d.controlChannel <- "telnet_error"
+					if !reconnect {
+						break
+					}
 				}
-				return
 			}
 		}()
 	}
@@ -205,8 +208,15 @@ func (d *DenonAVR) StartListenLoop() {
 			// Update every 5 Seconds
 			d.updateAndNotify()
 		case msg := <-d.controlChannel:
-			if msg == "disconnect" {
-				return
+			switch msg {
+			case "disconnect":
+				log.Debug("return listen loop due to disconnect")
+				// Make sure telnet also disconnects
+				telnetControlChannel <- "disconnect"
+				return nil
+			case "telnet_error":
+				log.Debug("return listen loop with error")
+				return fmt.Errorf("telnet connection error")
 			}
 
 		}

@@ -74,7 +74,7 @@ func (d *DenonAVR) handleTelnetEvents(controlChannel chan string) {
 	}
 }
 
-func (d *DenonAVR) listenTelnet(controlChannel chan string) error {
+func (d *DenonAVR) listenTelnet(controlChannel chan string) (error, bool) {
 
 	log.Debug("Start Telnet listen loop")
 
@@ -82,9 +82,12 @@ func (d *DenonAVR) listenTelnet(controlChannel chan string) error {
 
 	defer func() {
 		log.Debug("Closing Telnet connection")
+		// Make sure eventHandler loop is also closed
 		eventHandlerControlChannel <- "disconnect"
-		if err := d.telnet.Close(); err != nil {
-			log.WithError(err).Debug("Telnet connection (already) closed")
+		if d.telnet != nil {
+			if err := d.telnet.Close(); err != nil {
+				log.WithError(err).Debug("Telnet connection (already) closed")
+			}
 		}
 	}()
 
@@ -95,17 +98,17 @@ func (d *DenonAVR) listenTelnet(controlChannel chan string) error {
 	d.telnet, err = telnet.DialTimeout("tcp", d.Host+":23", 5*time.Second)
 	if err != nil {
 		log.WithError(err).Info("failed to connect to telnet")
-		return err
+		return err, false
 	}
 
 	if err = d.telnet.Conn.(*net.TCPConn).SetKeepAlive(true); err != nil {
 		log.WithError(err).Error("failed to enable tcp keep alive")
-		return err
+		return err, false
 	}
 
 	if err = d.telnet.Conn.(*net.TCPConn).SetKeepAlivePeriod(5 * time.Second); err != nil {
 		log.WithError(err).Error("failed to set tcp keep alive period")
-		return err
+		return err, false
 	}
 
 	log.WithField("host", d.Host+":23").Debug("Telnet connected")
@@ -119,7 +122,8 @@ func (d *DenonAVR) listenTelnet(controlChannel chan string) error {
 		case data := <-dataChannel:
 			if data == "" {
 				log.Debug("No Data from Telnet received")
-				return fmt.Errorf("failed to read form telnet")
+				// Return the error but try to reconnect as we just lost the connection
+				return fmt.Errorf("failed to read form telnet"), true
 			}
 			parsedData := strings.Split(data, " ")
 			event := TelnetEvent{}
@@ -133,7 +137,7 @@ func (d *DenonAVR) listenTelnet(controlChannel chan string) error {
 			d.telnetEvents <- &event
 		case msg := <-controlChannel:
 			if msg == "disconnect" {
-				return nil
+				return nil, false
 			}
 		}
 
@@ -146,6 +150,7 @@ func (d *DenonAVR) telnetReadString(dataChannel chan string) {
 	data = strings.Trim(data, " \n\r")
 	if err != nil {
 		log.WithError(err).Errorf("failed to read form telnet")
+		close(dataChannel)
 		return
 	}
 	dataChannel <- data
