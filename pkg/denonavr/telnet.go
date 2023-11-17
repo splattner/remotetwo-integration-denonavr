@@ -74,6 +74,29 @@ func (d *DenonAVR) handleTelnetEvents(controlChannel chan string) {
 	}
 }
 
+func (d *DenonAVR) ConnectTelnet() (*telnet.Conn, error) {
+
+	telnet, err := telnet.DialTimeout("tcp", d.Host+":23", 5*time.Second)
+	if err != nil {
+		log.WithError(err).Error("failed to connect to telnet")
+		return nil, err
+	}
+
+	if err := telnet.Conn.(*net.TCPConn).SetKeepAlive(true); err != nil {
+		log.WithError(err).Error("failed to enable tcp keep alive")
+		return nil, err
+	}
+
+	if err := telnet.Conn.(*net.TCPConn).SetKeepAlivePeriod(5 * time.Second); err != nil {
+		log.WithError(err).Error("failed to set tcp keep alive period")
+		return nil, err
+	}
+
+	log.WithField("host", d.Host+":23").Debug("Telnet connected")
+
+	return telnet, nil
+}
+
 func (d *DenonAVR) listenTelnet(controlChannel chan string) (error, bool) {
 
 	log.Debug("Start Telnet listen loop")
@@ -95,19 +118,8 @@ func (d *DenonAVR) listenTelnet(controlChannel chan string) (error, bool) {
 
 	var err error
 
-	d.telnet, err = telnet.DialTimeout("tcp", d.Host+":23", 5*time.Second)
+	d.telnet, err = d.ConnectTelnet()
 	if err != nil {
-		log.WithError(err).Info("failed to connect to telnet")
-		return err, false
-	}
-
-	if err = d.telnet.Conn.(*net.TCPConn).SetKeepAlive(true); err != nil {
-		log.WithError(err).Error("failed to enable tcp keep alive")
-		return err, false
-	}
-
-	if err = d.telnet.Conn.(*net.TCPConn).SetKeepAlivePeriod(5 * time.Second); err != nil {
-		log.WithError(err).Error("failed to set tcp keep alive period")
 		return err, false
 	}
 
@@ -168,6 +180,7 @@ func (d *DenonAVR) sendTelnetCommand(cmd DenonCommand, payload string) error {
 
 	if d.telnet != nil {
 		_, err := d.telnet.Write([]byte(string(cmd) + payload + "\r"))
+		log.WithError(err).Error("Failed to send telnet command")
 		return err
 	}
 

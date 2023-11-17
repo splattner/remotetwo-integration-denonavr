@@ -141,22 +141,27 @@ func (d *DenonAVR) callEntityChangeFunction(attribute string, newValue interface
 	}
 }
 
-func (d *DenonAVR) getMainZoneDataFromDevice() {
+func (d *DenonAVR) getMainZoneDataFromDevice() error {
 
 	d.mainZoneData = DenonXML{} // Somehow the values in the array are added instead of replaced. Not sure if this is the solution, but it works...
 	resp, err := http.Get("http://" + d.Host + MAINZONE_URL)
 	if err != nil {
-		log.Fatalln(err)
+		log.WithError(err).Error("Failed to get data from Denon AVR")
+		return err
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.WithError(err).Error("Cannot read response body")
+		return err
 	}
 
 	if err := xml.Unmarshal(body, &d.mainZoneData); err != nil {
 		log.WithError(err).Info("Could not unmarshall")
+		return err
 	}
+
+	return nil
 }
 
 func (d *DenonAVR) StopListenLoop() {
@@ -185,7 +190,6 @@ func (d *DenonAVR) StartListenLoop() error {
 			for {
 				log.Debug("Starting Telnet Loop")
 				if err, reconnect := d.listenTelnet(telnetControlChannel); err != nil {
-					log.WithError(err).Debug("listenTelnet returned with error")
 					close(telnetControlChannel)
 					d.controlChannel <- "telnet_error"
 					if !reconnect {
@@ -217,6 +221,9 @@ func (d *DenonAVR) StartListenLoop() error {
 			case "telnet_error":
 				log.Debug("return listen loop with error")
 				return fmt.Errorf("telnet connection error")
+			case "http_error":
+				log.Debug("return listen loop with error")
+				return fmt.Errorf("http connection error")
 			}
 
 		}
@@ -234,7 +241,10 @@ func (d *DenonAVR) updateAndNotify() {
 
 func (d *DenonAVR) updateMainZoneDataAndNotify() {
 
-	d.getMainZoneDataFromDevice()
+	if err := d.getMainZoneDataFromDevice(); err != nil {
+		d.controlChannel <- "http_error"
+		return
+	}
 
 	d.SetAttribute("POWER", d.mainZoneData.Power)
 

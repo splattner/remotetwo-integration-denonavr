@@ -40,7 +40,8 @@ func (d *DenonAVR) getZoneStatus(zone DenonZone) DenonZoneStatus {
 		url = "http://" + d.Host + STATUS_Z3_URL
 	}
 
-	d.zoneStatus[zone] = d.getZoneStatusFromDevice(url)
+	zoneStatus, _ := d.getZoneStatusFromDevice(url)
+	d.zoneStatus[zone] = *zoneStatus
 
 	return d.zoneStatus[zone]
 
@@ -52,23 +53,26 @@ func (d *DenonAVR) getNetAudioStatus() {
 }
 
 // Return the Status from a Zone
-func (d *DenonAVR) getZoneStatusFromDevice(url string) DenonZoneStatus {
+func (d *DenonAVR) getZoneStatusFromDevice(url string) (*DenonZoneStatus, error) {
 	status := DenonZoneStatus{} // Somehow the values in the array are added instead of replaced. Not sure if this is the solution, but it works...
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatalln(err)
+		log.WithError(err).Error("Failed to get data from Denon AVR")
+		return nil, err
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.WithError(err).Error("Cannot read response body")
+		return nil, err
 	}
 
 	if err := xml.Unmarshal(body, &status); err != nil {
 		log.WithError(err).Info("Could not unmarshall")
+		return nil, err
 	}
 
-	return status
+	return &status, nil
 }
 
 // Return the Status from a Zone
