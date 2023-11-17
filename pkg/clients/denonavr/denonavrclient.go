@@ -1,6 +1,7 @@
 package denonavrclient
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -65,7 +66,7 @@ func NewDenonAVRClient(i *integration.Integration) *DenonAVRClient {
 		Name: integration.LanguageText{
 			En: "Denon AVR",
 		},
-		Version: "0.2.9",
+		Version: "0.2.10",
 		SetupDataSchema: integration.SetupDataSchema{
 			Title: integration.LanguageText{
 				En: "Configuration",
@@ -82,6 +83,7 @@ func NewDenonAVRClient(i *integration.Integration) *DenonAVRClient {
 	client.InitFunc = client.initDenonAVRClient
 	client.SetupFunc = client.denonHandleSetup
 	client.ClientLoopFunc = client.denonClientLoop
+	client.SetDriverUserDataFunc = client.handleSetDriverUserData
 
 	client.mapOnState = map[bool]entities.MediaPlayerEntityState{
 		true:  entities.OnMediaPlayerEntityState,
@@ -136,14 +138,71 @@ func (c *DenonAVRClient) initDenonAVRClient() {
 func (c *DenonAVRClient) denonHandleSetup(setup_data integration.SetupData) {
 
 	c.IntegrationDriver.SetDriverSetupState(integration.SetupEvent, integration.SetupState, "", nil)
-	time.Sleep(1 * time.Second)
 
-	// No required User action so finish
-	c.IntegrationDriver.SetDriverSetupState(integration.StopEvent, integration.OkState, "", nil)
+	telnetEnabled, err := strconv.ParseBool(c.IntegrationDriver.SetupData["telnet"])
+	if err != nil {
+		telnetEnabled = false
+	}
+
+	if telnetEnabled {
+		var userAction = integration.RequireUserAction{
+			Confirmation: integration.ConfirmationPage{
+				Title: integration.LanguageText{
+					En: "Be aware",
+				},
+				Message1: integration.LanguageText{
+					En: "When using telnet, no other connection to your Denon AVR can be made via telnet",
+				},
+			},
+		}
+
+		// Start the setup with some require user data
+		time.Sleep(1 * time.Second)
+		c.IntegrationDriver.SetDriverSetupState(integration.SetupEvent, integration.WaitUserActionState, "", &userAction)
+	} else {
+		// No required User action so finish
+		time.Sleep(1 * time.Second)
+		c.IntegrationDriver.SetDriverSetupState(integration.StopEvent, integration.OkState, "", nil)
+		c.FinishIntegrationSetup()
+	}
 
 }
 
-func (c *DenonAVRClient) setupDenon() {
+func (c *DenonAVRClient) handleSetDriverUserData(user_data map[string]string, confirm bool) {
+
+	log.Debug("Denon handle set driver user data")
+
+	// confirm seems to be set to false always, maybe just the presence of the field tells me,
+	// confirmation was sent?
+	if len(user_data) == 0 {
+		log.Debug("Telnet enabled, test if we can connect via telnet")
+
+		telnetEnabled, err := strconv.ParseBool(c.IntegrationDriver.SetupData["telnet"])
+		if err != nil {
+			telnetEnabled = false
+		}
+
+		if telnetEnabled {
+			denon := denonavr.NewDenonAVR(c.IntegrationDriver.SetupData["ipaddr"], telnetEnabled)
+			if telnet, err := denon.ConnectTelnet(); err != nil {
+				c.IntegrationDriver.SetDriverSetupState(integration.StopEvent, integration.ErrorState, integration.ConnectionRefusedError, nil)
+				return
+			} else {
+				// Close connection again. So later we don't run into connection errors
+				if err := telnet.Close(); err != nil {
+					log.WithError(err).Debug("Telnet connection (already) closed")
+				}
+			}
+		}
+
+		c.IntegrationDriver.SetDriverSetupState(integration.StopEvent, integration.OkState, "", nil)
+		c.FinishIntegrationSetup()
+
+	}
+}
+
+func (c *DenonAVRClient) setupDenon() error {
+	log.Debug("Create new Denon Client")
 	if c.IntegrationDriver.SetupData != nil && c.IntegrationDriver.SetupData["ipaddr"] != "" {
 		telnetEnabled, err := strconv.ParseBool(c.IntegrationDriver.SetupData["telnet"])
 		if err != nil {
@@ -151,11 +210,16 @@ func (c *DenonAVRClient) setupDenon() {
 		}
 		c.denon = denonavr.NewDenonAVR(c.IntegrationDriver.SetupData["ipaddr"], telnetEnabled)
 	} else {
-		log.Error("Cannot setup Denon, missing setupData")
+		err := fmt.Errorf("cannot setup Denon Client, missing setupData")
+		return err
 	}
+
+	return nil
 }
 
 func (c *DenonAVRClient) configureDenon() {
+
+	log.Debug("Configure Denon Integration")
 
 	// Configure the Entity Change Func
 
@@ -283,12 +347,25 @@ func (c *DenonAVRClient) configureDenon() {
 }
 
 func (c *DenonAVRClient) denonClientLoop() {
+	log.Debug("Start Denon Client Loop")
+
+	if !c.IntegrationSetupFinished() {
+
+		// Migration, if ipaddr already available, call FinishIntegrationSetup
+		if c.IntegrationDriver.SetupData != nil && c.IntegrationDriver.SetupData["ipaddr"] != "" {
+			c.FinishIntegrationSetup()
+		} else {
+			log.Info("Cannot handle connect, integration setup not yet finished")
+			return
+		}
+	}
 
 	if c.denon == nil {
 		// Initialize Denon Client
-		c.setupDenon()
-	} else {
-		return
+		if err := c.setupDenon(); err != nil {
+			log.WithError(err).Error("Setup/Connection of Denon failed")
+			return
+		}
 	}
 
 	// Start the Denon Liste Loop if already configured
@@ -301,7 +378,7 @@ func (c *DenonAVRClient) denonClientLoop() {
 			log.WithFields(log.Fields{
 				"Denon IP": c.denon.Host}).Info("Start Denon AVR Client Loop")
 			if err := c.denon.StartListenLoop(); err != nil {
-				log.WithError(err).Debug("Denon AVR Client Loop ended with errors")
+				log.WithError(err).Error("Denon AVR Client Loop ended with errors")
 				c.Messages <- "error"
 			}
 		}()

@@ -14,7 +14,8 @@ func (d *DenonAVR) sendCommandToDevice(cmd DenonCommand, payload string) (int, e
 
 		err := d.sendTelnetCommand(cmd, payload)
 		if err != nil {
-			return 404, err
+			// Fallback to HTTP
+			return d.sendHTTPCommand(cmd, payload)
 		}
 
 		return 200, nil
