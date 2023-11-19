@@ -6,7 +6,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.17.0
-	github.com/splattner/goucrt v0.3.1
+	github.com/splattner/goucrt v0.3.2
 	github.com/ziutek/telnet v0.0.0-20180329124119-c3b780dc415b
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 )
