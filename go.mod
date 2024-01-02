@@ -8,7 +8,7 @@ require (
 	github.com/spf13/viper v1.17.0
 	github.com/splattner/goucrt v0.3.2
 	github.com/ziutek/telnet v0.0.0-20180329124119-c3b780dc415b
-	k8s.io/utils v0.0.0-20231127182322-b307cd553661
+	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
 )
 
 require (
