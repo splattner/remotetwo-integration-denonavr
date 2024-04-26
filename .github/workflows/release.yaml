@@ -34,7 +34,7 @@ jobs:
       with:
         cosign-release: 'v2.1.1'
 
-    - uses: anchore/sbom-action/download-syft@v0.15.0 # installs syft
+    - uses: anchore/sbom-action/download-syft@v0.15.11 # installs syft
 
     - uses: actions/setup-go@v4
       with:
