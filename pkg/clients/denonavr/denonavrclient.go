@@ -112,6 +112,7 @@ func (c *DenonAVRClient) initDenonAVRClient() {
 	c.mediaPlayer.AddFeature(entities.MediaTitleMediaPlayerEntityFeatures)
 	c.mediaPlayer.AddFeature(entities.MediaImageUrlMediaPlayerEntityFeatures)
 	c.mediaPlayer.AddFeature(entities.MenuMediaPlayerEntityFeatures)
+	c.mediaPlayer.AddFeature(entities.InfoPlayerEntityFeatures)
 
 	if err := c.IntegrationDriver.AddEntity(c.mediaPlayer); err != nil {
 		log.WithError(err).Error("Cannot add Entity")
@@ -344,6 +345,10 @@ func (c *DenonAVRClient) configureDenon() {
 	c.mediaPlayer.AddCommand(entities.MenuMediaPlayerEntityCommand, func(mediaPlayer entities.MediaPlayerEntity, params map[string]interface{}) int {
 		log.WithField("entityId", mediaPlayer.Id).Debug("MenuMediaPlayerEntityCommand called")
 		return c.denon.CursorControl(denonavr.DenonCursorControlMenu)
+	})
+	c.mediaPlayer.AddCommand(entities.InfoMediaPlayerEntityCommand, func(mediaPlayer entities.MediaPlayerEntity, params map[string]interface{}) int {
+		log.WithField("entityId", mediaPlayer.Id).Debug("InfoMediaPlayerEntityCommand called")
+		return c.denon.CursorControl(denonavr.DenonCursorControlMenuInfo)
 	})
 
 	// Sound Mode

@@ -3,13 +3,14 @@ package denonavr
 type DenonCursorControl string
 
 const (
-	DenonCursorControlUp     DenonCursorControl = "CUP"
-	DenonCursorControlDown   DenonCursorControl = "CDN"
-	DenonCursorControlLeft   DenonCursorControl = "CLT"
-	DenonCursorControlRight  DenonCursorControl = "CRT"
-	DenonCursorControlEnter  DenonCursorControl = "ENT"
-	DenonCursorControlReturn DenonCursorControl = "RTN"
-	DenonCursorControlMenu   DenonCursorControl = "MEN ON"
+	DenonCursorControlUp       DenonCursorControl = "CUP"
+	DenonCursorControlDown     DenonCursorControl = "CDN"
+	DenonCursorControlLeft     DenonCursorControl = "CLT"
+	DenonCursorControlRight    DenonCursorControl = "CRT"
+	DenonCursorControlEnter    DenonCursorControl = "ENT"
+	DenonCursorControlReturn   DenonCursorControl = "RTN"
+	DenonCursorControlMenu     DenonCursorControl = "MEN ON"
+	DenonCursorControlMenuInfo DenonCursorControl = "INF"
 )
 
 func (d *DenonAVR) CursorControl(cursorControl DenonCursorControl) int {
