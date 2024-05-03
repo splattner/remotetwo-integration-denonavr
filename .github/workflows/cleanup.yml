@@ -18,7 +18,7 @@ jobs:
       packages: write
 
     steps:
-    - uses: actions/delete-package-versions@v4
+    - uses: actions/delete-package-versions@v5
       with: 
           package-name: remotetwo-integration-denonavr
           package-type: 'container'
