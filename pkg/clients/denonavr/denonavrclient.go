@@ -66,7 +66,7 @@ func NewDenonAVRClient(i *integration.Integration) *DenonAVRClient {
 		Name: integration.LanguageText{
 			En: "Denon AVR",
 		},
-		Version: "0.2.10",
+		Version: "0.2.11",
 		SetupDataSchema: integration.SetupDataSchema{
 			Title: integration.LanguageText{
 				En: "Configuration",
@@ -132,6 +132,10 @@ func (c *DenonAVRClient) initDenonAVRClient() {
 	if err := c.IntegrationDriver.AddEntity(c.moniAutoButton); err != nil {
 		log.WithError(err).Error("Cannot add Entity")
 	}
+
+	simpleCommands := []string{"OUTPUT_MONITOR1", "OUTPUT_MONITOR2", "OUTPUT_MONITORAUTO"}
+
+	c.mediaPlayer.AddOption(entities.SimpleCommandsMediaPlayerEntityOption, simpleCommands)
 
 }
 
@@ -227,6 +231,10 @@ func (c *DenonAVRClient) configureDenon() {
 	c.moni1Button.MapCommand(entities.PushButtonEntityCommand, c.denon.SetMoni1Out)
 	c.moni2Button.MapCommand(entities.PushButtonEntityCommand, c.denon.SetMoni2Out)
 	c.moniAutoButton.MapCommand(entities.PushButtonEntityCommand, c.denon.SetMoniAutoOut)
+
+	c.mediaPlayer.MapCommand(entities.MediaPlayerEntityCommand("OUTPUT_MONITOR1"), c.denon.SetMoni1Out)
+	c.mediaPlayer.MapCommand(entities.MediaPlayerEntityCommand("OUTPUT_MONITOR2"), c.denon.SetMoni2Out)
+	c.mediaPlayer.MapCommand(entities.MediaPlayerEntityCommand("OUTPUT_MONITORAUTO"), c.denon.SetMoniAutoOut)
 
 	// Media Player
 	c.denon.AddHandleEntityChangeFunc("MainZonePower", func(value interface{}) {
