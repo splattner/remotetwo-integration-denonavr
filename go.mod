@@ -6,7 +6,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.19.0
-	github.com/splattner/goucrt v0.3.3
+	github.com/splattner/goucrt v0.3.4
 	github.com/ziutek/telnet v0.0.0-20180329124119-c3b780dc415b
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0
 )
@@ -14,7 +14,7 @@ require (
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/gorilla/websocket v1.5.1 // indirect
+	github.com/gorilla/websocket v1.5.2 // indirect
 	github.com/grandcat/zeroconf v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
