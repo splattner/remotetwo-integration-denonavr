@@ -10,7 +10,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/splattner/goucrt v0.3.4
 	github.com/ziutek/telnet v0.1.0
-	k8s.io/utils v0.0.0-20241104163129-6fe5fd82f078
+	k8s.io/utils v0.0.0-20241210054802-24370beab758
 )
 
 require (
