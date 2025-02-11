@@ -32,7 +32,7 @@ jobs:
     - name: Install cosign
       uses: sigstore/cosign-installer@c56c2d3e59e4281cc41dea2217323ba5694b171e # v3.8.0
 
-    - uses: anchore/sbom-action/download-syft@v0.17.8 # installs syft
+    - uses: anchore/sbom-action/download-syft@v0.18.0 # installs syft
 
     - uses: actions/setup-go@v5
       with:
