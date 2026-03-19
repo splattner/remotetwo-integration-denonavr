@@ -1,6 +1,6 @@
 module github.com/splattner/remotetwo-integration-denonavr
 
-go 1.22.5
+go 1.23
 
 toolchain go1.23.4
 
@@ -10,7 +10,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/splattner/goucrt v0.3.4
 	github.com/ziutek/telnet v0.1.0
-	k8s.io/utils v0.0.0-20241210054802-24370beab758
+	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5
 )
 
 require (
