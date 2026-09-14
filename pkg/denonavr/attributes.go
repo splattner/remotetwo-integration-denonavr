@@ -27,7 +27,7 @@ func (d *DenonAVR) GetAttribute(name string) (interface{}, error) {
 	defer d.attributeMutex.Unlock()
 
 	if d.attributes[name] == nil {
-		return nil, fmt.Errorf("Attribute not Found")
+		return nil, fmt.Errorf("attribute not found: %s", name)
 	}
 
 	return d.attributes[name], nil
