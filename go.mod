@@ -6,7 +6,7 @@ require (
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
-	github.com/splattner/goucrt v0.5.0
+	github.com/splattner/goucrt v0.6.0
 	github.com/ziutek/telnet v0.1.0
 )
 
