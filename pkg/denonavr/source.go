@@ -1,10 +1,10 @@
 package denonavr
 
 import (
+	"slices"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"k8s.io/utils/strings/slices"
 )
 
 var SOURCE_MAPPING = map[string]string{

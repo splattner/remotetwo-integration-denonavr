@@ -1,6 +1,6 @@
 module github.com/splattner/remotetwo-integration-denonavr
 
-go 1.24.0
+go 1.26.0
 
 require (
 	github.com/sirupsen/logrus v1.10.2
@@ -8,7 +8,6 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/splattner/goucrt v0.5.0
 	github.com/ziutek/telnet v0.1.0
-	k8s.io/utils v0.0.0-20241210054802-24370beab758
 )
 
 require (
@@ -33,4 +32,5 @@ require (
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	golang.org/x/tools v0.36.0 // indirect
+	k8s.io/utils v0.0.0-20241210054802-24370beab758 // indirect
 )

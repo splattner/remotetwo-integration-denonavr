@@ -3,8 +3,7 @@ package denonavr
 import (
 	"fmt"
 	"hash/fnv"
-
-	"k8s.io/utils/strings/slices"
+	"slices"
 )
 
 func (d *DenonAVR) Play() int {
