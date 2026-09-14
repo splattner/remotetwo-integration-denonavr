@@ -100,8 +100,8 @@ func (c *DenonAVRClient) initDenonAVRClient() {
 	// Media Player
 	c.mediaPlayer = entities.NewMediaPlayerEntity("mediaplayer", entities.LanguageText{En: "Denon AVR"}, "", entities.ReceiverMediaPlayerDeviceClass)
 	c.mediaPlayer.AddFeature(entities.OnOffMediaPlayerEntityFeatures)
-	c.mediaPlayer.AddFeature(entities.ToggleMediaPlayerEntityyFeatures)
-	c.mediaPlayer.AddFeature(entities.VolumeMediaPlayerEntityyFeatures)
+	c.mediaPlayer.AddFeature(entities.ToggleMediaPlayerEntityFeatures)
+	c.mediaPlayer.AddFeature(entities.VolumeMediaPlayerEntityFeatures)
 	c.mediaPlayer.AddFeature(entities.VolumeUpDownMediaPlayerEntityFeatures)
 	c.mediaPlayer.AddFeature(entities.MuteMediaPlayerEntityFeatures)
 	c.mediaPlayer.AddFeature(entities.UnmuteMediaPlayerEntityFeatures)
@@ -239,7 +239,7 @@ func (c *DenonAVRClient) configureDenon() {
 
 	// Media Player
 	c.denon.AddHandleEntityChangeFunc("MainZonePower", func(value interface{}) {
-		c.mediaPlayer.SetAttribute(entities.StateMediaPlayerEntityAttribute, c.mapOnState[c.denon.IsOn()])
+		c.mediaPlayer.SetAttribute(string(entities.StateMediaPlayerEntityAttribute), c.mapOnState[c.denon.IsOn()])
 	})
 
 	c.denon.AddHandleEntityChangeFunc("MainZoneVolume", func(value interface{}) {
@@ -249,38 +249,38 @@ func (c *DenonAVRClient) configureDenon() {
 			volume = s
 		}
 
-		c.mediaPlayer.SetAttribute(entities.VolumeMediaPlayerEntityAttribute, volume+80)
+		c.mediaPlayer.SetAttribute(string(entities.VolumeMediaPlayerEntityAttribute), volume+80)
 	})
 
 	c.denon.AddHandleEntityChangeFunc("MainZoneMute", func(value interface{}) {
-		c.mediaPlayer.SetAttribute(entities.MutedMediaPlayeEntityAttribute, c.denon.MainZoneMuted())
+		c.mediaPlayer.SetAttribute(string(entities.MutedMediaPlayerEntityAttribute), c.denon.MainZoneMuted())
 	})
 
 	c.denon.AddHandleEntityChangeFunc("MainZoneInputFuncList", func(value interface{}) {
-		c.mediaPlayer.SetAttribute(entities.SourceListMediaPlayerEntityAttribute, value.([]string))
+		c.mediaPlayer.SetAttribute(string(entities.SourceListMediaPlayerEntityAttribute), value.([]string))
 	})
 
 	c.denon.AddHandleEntityChangeFunc("MainZoneInputFuncSelect", func(value interface{}) {
-		c.mediaPlayer.SetAttribute(entities.SourceMediaPlayerEntityAttribute, value.(string))
+		c.mediaPlayer.SetAttribute(string(entities.SourceMediaPlayerEntityAttribute), value.(string))
 	})
 
 	c.denon.AddHandleEntityChangeFunc("MainZoneSurroundMode", func(value interface{}) {
-		c.mediaPlayer.SetAttribute(entities.SoundModeMediaPlayerEntityAttribute, value.(string))
+		c.mediaPlayer.SetAttribute(string(entities.SoundModeMediaPlayerEntityAttribute), value.(string))
 	})
 
 	// We can set the sound_mode_list without change handler. Its static
 	func() {
-		c.mediaPlayer.SetAttribute(entities.SoundModeListMediaPlayerEntityAttribute, c.denon.GetSoundModeList())
+		c.mediaPlayer.SetAttribute(string(entities.SoundModeListMediaPlayerEntityAttribute), c.denon.GetSoundModeList())
 	}()
 
 	// Media Title
 	c.denon.AddHandleEntityChangeFunc("media_title", func(value interface{}) {
-		c.mediaPlayer.SetAttribute(entities.MediaTitleMediaPlayerEntityAttribute, value.(string))
+		c.mediaPlayer.SetAttribute(string(entities.MediaTitleMediaPlayerEntityAttribute), value.(string))
 	})
 
 	// Media Image URL
 	c.denon.AddHandleEntityChangeFunc("media_image_url", func(value interface{}) {
-		c.mediaPlayer.SetAttribute(entities.MediaImageUrlMediaPlayerEntityAttribute, value.(string))
+		c.mediaPlayer.SetAttribute(string(entities.MediaImageUrlMediaPlayerEntityAttribute), value.(string))
 	})
 
 	// Add Commands
@@ -309,8 +309,8 @@ func (c *DenonAVRClient) configureDenon() {
 	c.mediaPlayer.MapCommand(entities.MuteToggleMediaPlayerEntityCommand, c.denon.MainZoneMuteToggle)
 
 	// Source commands
-	c.mediaPlayer.AddCommand(entities.SelectSourcMediaPlayerEntityCommand, func(mediaPlayer entities.MediaPlayerEntity, params map[string]interface{}) int {
-		log.WithField("entityId", mediaPlayer.Id).Debug("SelectSourcMediaPlayerEntityCommand called")
+	c.mediaPlayer.AddCommand(entities.SelectSourceMediaPlayerEntityCommand, func(mediaPlayer entities.MediaPlayerEntity, params map[string]interface{}) int {
+		log.WithField("entityId", mediaPlayer.Id).Debug("SelectSourceMediaPlayerEntityCommand called")
 		if params["source"] != nil {
 			return c.denon.SetSelectSourceMainZone(params["source"].(string))
 		}
