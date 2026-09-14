@@ -106,7 +106,7 @@ func NewCommand(name string) *cobra.Command {
 	if err := viper.BindPFlag("registrationPin", rootCmd.PersistentFlags().Lookup("registrationPin")); err != nil {
 		log.WithError(err).Error(("Cannot bindPFplag"))
 	}
-	if err := viper.BindEnv("registrationUsername", "UC_REGISTRATION_PIN"); err != nil {
+	if err := viper.BindEnv("registrationPin", "UC_REGISTRATION_PIN"); err != nil {
 		log.WithError(err).Error(("Cannot BindEnv"))
 	}
 

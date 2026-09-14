@@ -16,6 +16,7 @@ $(go_bin):
 	@mkdir -p $@
 
 golangci_bin = $(go_bin)/golangci-lint
+golangci_version ?= v2.13.2
 
 
 # Image URL to use all building/pushing image targets
