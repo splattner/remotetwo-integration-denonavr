@@ -15,6 +15,7 @@ coverage/
 /.work/
 
 dist/
+custom-driver-dist/
 
 rtintg-denonavr-amd64
 rtintg-denonavr-arm64
