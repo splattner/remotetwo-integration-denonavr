@@ -2,7 +2,6 @@ package denonavr
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 
 	log "github.com/sirupsen/logrus"
@@ -32,15 +31,16 @@ func (d *DenonAVR) sendHTTPCommand(denonCommandType DenonCommand, command string
 		"command": command,
 		"url":     url}).Info("Send Command to Denon Device")
 
-	req, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
-		return req.StatusCode, fmt.Errorf("error sending command: %w", err)
+		return 0, fmt.Errorf("error sending command: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	// Trigger a update to get updated data handled in the Listen Loop
 	d.updateTrigger <- "update"
 
-	return req.StatusCode, nil
+	return resp.StatusCode, nil
 }
 
 func (d *DenonAVR) SetMoni1Out() error {

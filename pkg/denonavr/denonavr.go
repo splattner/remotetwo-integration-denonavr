@@ -47,6 +47,10 @@ const (
 	NET_AUDIO_STATUR_URL string = "/goform/formNetAudio_StatusXml.xml"
 )
 
+// Shared HTTP client with a timeout so a device that accepts the connection
+// but never responds can't hang the calling goroutine forever.
+var httpClient = &http.Client{Timeout: 10 * time.Second}
+
 type DenonXML struct {
 	XMLName          xml.Name     `xml:"item"`
 	FriendlyName     string       `xml:"FriendlyName>value"`
@@ -144,11 +148,12 @@ func (d *DenonAVR) callEntityChangeFunction(attribute string, newValue interface
 func (d *DenonAVR) getMainZoneDataFromDevice() error {
 
 	d.mainZoneData = DenonXML{} // Somehow the values in the array are added instead of replaced. Not sure if this is the solution, but it works...
-	resp, err := http.Get("http://" + d.Host + MAINZONE_URL)
+	resp, err := httpClient.Get("http://" + d.Host + MAINZONE_URL)
 	if err != nil {
 		log.WithError(err).Error("Failed to get data from Denon AVR")
 		return err
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

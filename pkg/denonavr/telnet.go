@@ -23,14 +23,18 @@ func (d *DenonAVR) handleTelnetEvents(controlChannel chan string) {
 	for {
 		select {
 		case event := <-d.telnetEvents:
-			parsedCommand := strings.Split(event.Command, "")
-			command := parsedCommand[0] + parsedCommand[1]
-			param := strings.Join(parsedCommand[2:], "")
-
 			if event.Command == "OPSTS" {
 				// ignore this
 				continue
 			}
+
+			parsedCommand := strings.Split(event.Command, "")
+			if len(parsedCommand) < 2 {
+				log.WithField("cmd", event.Command).Debug("Ignoring too short telnet command")
+				continue
+			}
+			command := parsedCommand[0] + parsedCommand[1]
+			param := strings.Join(parsedCommand[2:], "")
 
 			log.WithFields(log.Fields{
 				"cmd":     event.Command,
@@ -50,6 +54,7 @@ func (d *DenonAVR) handleTelnetEvents(controlChannel chan string) {
 					volume, err := strconv.ParseFloat(param, 32)
 					if err != nil {
 						log.WithError(err).Error("failed to parse volume")
+						continue
 					}
 
 					// The Volume command need the following
@@ -180,7 +185,9 @@ func (d *DenonAVR) sendTelnetCommand(cmd DenonCommand, payload string) error {
 
 	if d.telnet != nil {
 		_, err := d.telnet.Write([]byte(string(cmd) + payload + "\r"))
-		log.WithError(err).Error("Failed to send telnet command")
+		if err != nil {
+			log.WithError(err).Error("Failed to send telnet command")
+		}
 		return err
 	}
 

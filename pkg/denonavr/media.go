@@ -27,7 +27,9 @@ func (d *DenonAVR) getMediaTitle() string {
 	if d.IsOn() {
 		if slices.Contains(PLAYING_SOURCES, d.mainZoneData.InputFuncSelect) {
 			// This is a source that is playing audio
-			media_title = d.netAudioStatus.SzLine[1]
+			if len(d.netAudioStatus.SzLine) > 1 {
+				media_title = d.netAudioStatus.SzLine[1]
+			}
 		} else {
 			// Not a playing source
 			media_title = d.mainZoneData.InputFuncSelect

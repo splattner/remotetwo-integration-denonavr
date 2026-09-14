@@ -3,7 +3,6 @@ package denonavr
 import (
 	"encoding/xml"
 	"io"
-	"net/http"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -40,7 +39,12 @@ func (d *DenonAVR) getZoneStatus(zone DenonZone) DenonZoneStatus {
 		url = "http://" + d.Host + STATUS_Z3_URL
 	}
 
-	zoneStatus, _ := d.getZoneStatusFromDevice(url)
+	zoneStatus, err := d.getZoneStatusFromDevice(url)
+	if err != nil {
+		// Keep the last known status instead of crashing or blanking it out
+		// on a transient network error.
+		return d.zoneStatus[zone]
+	}
 	d.zoneStatus[zone] = *zoneStatus
 
 	return d.zoneStatus[zone]
@@ -49,17 +53,20 @@ func (d *DenonAVR) getZoneStatus(zone DenonZone) DenonZoneStatus {
 
 func (d *DenonAVR) getNetAudioStatus() {
 	url := "http://" + d.Host + NET_AUDIO_STATUR_URL
-	d.netAudioStatus = d.getNetAudioStatusFromDevice(url)
+	if status, err := d.getNetAudioStatusFromDevice(url); err == nil {
+		d.netAudioStatus = status
+	}
 }
 
 // Return the Status from a Zone
 func (d *DenonAVR) getZoneStatusFromDevice(url string) (*DenonZoneStatus, error) {
 	status := DenonZoneStatus{} // Somehow the values in the array are added instead of replaced. Not sure if this is the solution, but it works...
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		log.WithError(err).Error("Failed to get data from Denon AVR")
 		return nil, err
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -76,21 +83,25 @@ func (d *DenonAVR) getZoneStatusFromDevice(url string) (*DenonZoneStatus, error)
 }
 
 // Return the Status from a Zone
-func (d *DenonAVR) getNetAudioStatusFromDevice(url string) DenonNetAudioStatus {
+func (d *DenonAVR) getNetAudioStatusFromDevice(url string) (DenonNetAudioStatus, error) {
 	status := DenonNetAudioStatus{} // Somehow the values in the array are added instead of replaced. Not sure if this is the solution, but it works...
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
-		log.Fatalln(err)
+		log.WithError(err).Error("Failed to get data from Denon AVR")
+		return status, err
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.WithError(err).Error("Cannot read response body")
+		return status, err
 	}
 
 	if err := xml.Unmarshal(body, &status); err != nil {
 		log.WithError(err).Info("Could not unmarshall")
+		return status, err
 	}
 
-	return status
+	return status, nil
 }

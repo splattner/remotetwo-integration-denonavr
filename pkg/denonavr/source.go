@@ -99,18 +99,24 @@ var HDTUNER_SOURCES = []string{
 	"HDRADIO",
 }
 
-var PLAYING_SOURCES = append(append(append(NETAUDIO_SOURCES, NETAUDIO_SOURCES...), TUNER_SOURCES...), HDTUNER_SOURCES...)
+var PLAYING_SOURCES = append(append(append([]string{}, NETAUDIO_SOURCES...), TUNER_SOURCES...), HDTUNER_SOURCES...)
 
 func (d *DenonAVR) GetZoneInputFuncList(zone DenonZone) map[string]string {
 
 	inputFuncList := make(map[string]string)
 
+	status := d.zoneStatus[zone]
+
 	// Only add those not deleted
 	// Use renamed value
-	for i, input := range d.zoneStatus[zone].InputFuncList {
+	for i, input := range status.InputFuncList {
+		// The XML fields aren't guaranteed to be the same length across models/firmware
+		if i >= len(status.SourceDelete) || i >= len(status.RenameSource) {
+			continue
+		}
 		// only the ones active or empty (== Online Music)
-		if d.zoneStatus[zone].SourceDelete[i] == "USE" || d.zoneStatus[zone].SourceDelete[i] == "" {
-			inputFuncList[input] = strings.TrimRight(d.zoneStatus[zone].RenameSource[i], " ")
+		if status.SourceDelete[i] == "USE" || status.SourceDelete[i] == "" {
+			inputFuncList[input] = strings.TrimRight(status.RenameSource[i], " ")
 		}
 	}
 
