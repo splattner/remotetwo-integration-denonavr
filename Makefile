@@ -85,8 +85,17 @@ docker-push: ## Push the docker image
 	docker push $(GOUCRT_GHCR_IMG)-amd64
 	docker push $(GOUCRT_GHCR_IMG)-arm64
 
+.PHONY: custom-driver-archives
+custom-driver-archives: ## Build the custom-installable driver archive for direct upload to the remote
+	@mkdir -p $(WORK_DIR)/custom-driver/bin
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o $(WORK_DIR)/custom-driver/bin/driver $(GOUCRT_MAIN_GO)
+	go run ./tools/gendriverjson -out $(WORK_DIR)/custom-driver/driver.json
+	cp assets/denon.png $(WORK_DIR)/custom-driver/denon.png
+	@mkdir -p $(CUSTOM_DRIVER_DIST_DIR)
+	tar -czf $(CUSTOM_DRIVER_DIST_DIR)/denonavr-custom-driver.tar.gz -C $(WORK_DIR)/custom-driver driver.json denon.png bin
+
 build-clean:
-	rm -rf dist/ bin/ cover.out $(BIN_FILENAME) $(BIN_FILENAME_ARM64) $(WORK_DIR)
+	rm -rf dist/ bin/ cover.out $(BIN_FILENAME) $(BIN_FILENAME_ARM64) $(WORK_DIR) $(CUSTOM_DRIVER_DIST_DIR)
 
 clean: $(clean_targets) ## Cleans up all the locally generated resources
 

@@ -18,6 +18,8 @@ $(go_bin):
 golangci_bin = $(go_bin)/golangci-lint
 golangci_version ?= v2.13.2
 
+CUSTOM_DRIVER_DIST_DIR ?= custom-driver-dist
+
 
 # Image URL to use all building/pushing image targets
 GOUCRT_GHCR_IMG ?= ghcr.io/splattner/remotetwo-integration-denonavr:$(IMG_TAG)
