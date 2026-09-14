@@ -291,9 +291,9 @@ func (c *DenonAVRClient) configureDenon() {
 	c.mediaPlayer.AddCommand(entities.VolumeMediaPlayerEntityCommand, func(mediaPlayer entities.MediaPlayerEntity, params map[string]interface{}) int {
 		log.WithField("entityId", mediaPlayer.Id).Debug("VolumeMediaPlayerEntityCommand called")
 
-		var volume float64
-		if v, err := strconv.ParseFloat(params["volume"].(string), 64); err == nil {
-			volume = v
+		volume, ok := entities.CommandParams(params).Float64("volume")
+		if !ok {
+			return 404
 		}
 		if err := c.denon.SetVolume(volume); err != nil {
 			return 404
@@ -311,8 +311,8 @@ func (c *DenonAVRClient) configureDenon() {
 	// Source commands
 	c.mediaPlayer.AddCommand(entities.SelectSourceMediaPlayerEntityCommand, func(mediaPlayer entities.MediaPlayerEntity, params map[string]interface{}) int {
 		log.WithField("entityId", mediaPlayer.Id).Debug("SelectSourceMediaPlayerEntityCommand called")
-		if params["source"] != nil {
-			return c.denon.SetSelectSourceMainZone(params["source"].(string))
+		if source, ok := entities.CommandParams(params).String("source"); ok {
+			return c.denon.SetSelectSourceMainZone(source)
 		}
 		return 200
 	})
@@ -354,7 +354,11 @@ func (c *DenonAVRClient) configureDenon() {
 	// Sound Mode
 	c.mediaPlayer.AddCommand(entities.SelectSoundModeMediaPlayerEntityCommand, func(mediaPlayer entities.MediaPlayerEntity, params map[string]interface{}) int {
 		log.WithField("entityId", mediaPlayer.Id).Debug("SelectSoundModeMediaPlayerEntityCommand called")
-		return c.denon.SetSoundModeMainZone(params["mode"].(string))
+		mode, ok := entities.CommandParams(params).String("mode")
+		if !ok {
+			return 404
+		}
+		return c.denon.SetSoundModeMainZone(mode)
 	})
 
 }
