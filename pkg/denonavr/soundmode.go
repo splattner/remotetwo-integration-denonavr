@@ -153,10 +153,6 @@ func (d *DenonAVR) getZoneSurroundMode(zoneStatus DenonZoneStatus) string {
 		surroundMode = "MOVIE"
 	}
 
-	if strings.Contains(strings.ToUpper(rawSurroundMode), "AURO3D") {
-		surroundMode = "AURO3D"
-	}
-
 	if strings.ToUpper(rawSurroundMode) == "AURO-2D SURROUND" {
 		surroundMode = "AURO2DSURR"
 	}
