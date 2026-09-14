@@ -66,6 +66,27 @@ For the mDNS adventisement to work correctly I suggest starting the integration 
 docker run --net=host -e UC_INTEGRATION_LISTEN_PORT=10000 -v ./localdir:/app/ucconfig ghcr.io/splattner/remotetwo-integration-denonavr:v0.3.7
 ```
 
+### As a custom driver on the Remote
+
+Instead of running a container, you can install the integration directly on the Remote Two/3 as a
+custom driver. Each [GitHub release](https://github.com/splattner/remotetwo-integration-denonavr/releases)
+has a `denonavr-custom-driver.tar.gz` attached, a statically linked `linux/arm64` binary at
+`bin/driver` plus a generated `driver.json` and the driver's icon at the archive root.
+
+Install it in the remote's web-configurator: integrations, _Add new_, _Install custom_, and upload
+the archive. Or via the REST API:
+
+```bash
+curl --location 'http://$REMOTE_IP/api/intg/install' \
+  --user 'web-configurator:$PIN' \
+  --form 'file=@"denonavr-custom-driver.tar.gz"'
+```
+
+Setup data persists across restarts in the remote-managed `$UC_CONFIG_HOME`/`$UC_DATA_HOME`
+directories - nothing to mount, unlike the container image. mDNS advertisement and self-registration
+are disabled automatically in this mode: the remote already knows how to reach the driver from the
+installation itself.
+
 ### Configuration
 
 #### Environment Variables

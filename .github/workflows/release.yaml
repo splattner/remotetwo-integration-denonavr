@@ -74,6 +74,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Build custom driver installation archive
+      run: make custom-driver-archives
+
     - name: Publish releases
       uses: goreleaser/goreleaser-action@v6
       with:

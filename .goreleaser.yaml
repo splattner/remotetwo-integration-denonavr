@@ -24,6 +24,14 @@ builds:
     - amd64
     - arm64
 
+# Custom-installable driver archive (packaged for the remote's custom-driver installation
+# feature) is built separately by `make custom-driver-archives` - GoReleaser has no way to place
+# a build's binary at an archive subpath like bin/driver, which that format requires. Attached to
+# the same GitHub release as plain downloads.
+release:
+  extra_files:
+    - glob: custom-driver-dist/*.tar.gz
+
 dockers:
 - image_templates:
   - "ghcr.io/splattner/remotetwo-integration-denonavr:v{{ .Version }}-amd64"
