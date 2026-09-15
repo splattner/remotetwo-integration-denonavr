@@ -34,7 +34,7 @@ jobs:
 
     - uses: anchore/sbom-action/download-syft@v0.24.2 # installs syft
 
-    - uses: actions/setup-go@v5
+    - uses: actions/setup-go@v7
       with:
         go-version: ${{ env.GO_VERSION }}
 
